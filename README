@@ -1,0 +1,59 @@
+PropertiesFu
+============
+
+PropertiesFu is a plugin which provides functionality that mixes features of
+STI and Polymorphic Associations. It allows to define attributes for an AR class
+which are stored in a separate table (kind of dictionary key -> value), but are
+accessible as easily as the regular AR attributes.
+Thanks to this approach it is possible to create an inheritance model with
+various attributes (properties) without storing them as columns in one big table
+(STI) or in many smaller tables (polymorphic associations).
+
+Example
+=======
+
+Here is a small example from test file:
+
+  class User < ActiveRecord::Base
+    properties_fu :user_properties, :street, :city
+    validates_presence_of :street
+
+    def address
+      "#{city}, #{street}"
+    end
+
+    # dumb example - it shows that it is possible to change values of properties easily
+    def upcase_city!
+      self.city = city.upcase
+    end
+  end
+
+User is the AR model, which has two properties (attrs) - street, and city. These
+properties are stored in the table called user_properties (the first parameter of
+properties_fu class method).
+As it is shown in the example it is possible to read and write properties
+as the regular AR attributes. Changed properties are automatically saved on
+after_save hook. Also, when object is destroyed its properties are destroyed too.
+Properties can be validated by default Rails validation methods.
+
+It is possible to define many properties tables for one model.
+
+How to use
+==========
+
+In order to use this plugin there need to be created a table. For the above example
+there should be created the following table:
+
+  create_table "user_properties", :force => true do |t|
+    t.column 'resource_id', :integer    # don't forget about this!
+    t.column 'name', :string
+    t.column 'value', :string
+  end
+
+Next in a model there has to be used properties_fu method with the following
+parameters:
+  properties_fu :properties_table, :property1, :property2, ..., :propertyN
+
+That's all! Enjoy!
+
+Copyright (c) 2008 Michal Ochman, released under the MIT license
