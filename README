@@ -1,5 +1,5 @@
-PropertiesFu
-============
+PropertiesFu - row attributes
+=============================
 
 PropertiesFu is a plugin which provides functionality that mixes features of
 STI and Polymorphic Associations. It allows to define attributes for an AR class
@@ -53,6 +53,24 @@ there should be created the following table:
 Next in a model there has to be used properties_fu method with the following
 parameters:
   properties_fu :properties_table, :property1, :property2, ..., :propertyN
+
+How to build queries using properties?
+--------------------------------------
+
+It is possible to create a SQL query with properties. In order to do this there
+has to be defined special :joins statement. It can be created by the following method:
+properties_table_joins(:property_1, :property_2, ..., :property_N)
+where arguments are names of properties used in the query. If property argument
+is not one of defined properties (in properties_fu method), it is ignored.
+Properties_table_joins method returns a string so there is no problem to combine
+it with other join statements used in the query. After adding such :joins statement
+there can be used property_1.value, property_2.value, etc. in the query conditions.
+Example usage:
+
+User.find(:all,
+          :joins => User.user_properties_joins(:city, :state),
+          :conditions => ['city.value = ? AND state.value = ?', 'New York', 'NY'])
+
 
 That's all! Enjoy!
 

@@ -14,7 +14,7 @@ module Ocher
         Object.const_set(properties_table_class_name, properties_table_class) unless Object.const_defined?(properties_table_class_name)
         # define has_many properties relation
         has_many properties_table, :foreign_key => 'resource_id', :dependent => :destroy
-
+        
         module_eval <<-EOS
           # define properties_table_hash - {property.name => property}
           def #{properties_table}_hash
@@ -38,6 +38,18 @@ module Ocher
           # define a method which returns list of properties - convert properties array to string representation - [:property1, :property2, ...]
           def self.#{properties_table}_list
             [#{properties.map{|p| ":#{p}"}.join(',')}]
+          end
+
+          # builds join string for given properties - for each property there has to be done one join
+          def self.#{properties_table}_joins(*join_properties)
+            result = ''
+            join_properties.flatten.each do |property|
+              if #{properties_table}_list.include?(property.to_sym)
+                result << "LEFT JOIN #{properties_table} AS \#{property} ON #{table_name}.id = \#{property}.resource_id AND \#{property}.name = '\#{property}'"
+                result << ' '
+              end
+            end
+            result.strip
           end
         EOS
 

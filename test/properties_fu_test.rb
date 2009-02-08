@@ -128,4 +128,30 @@ class PropertiesFuTest < Test::Unit::TestCase
     assert_equal([], AbstractUser.user_properties_list)
     assert_equal([:street, :city], User.user_properties_list)
   end
+
+  def test_should_provide_method_for_building_join_statements
+    # should allow join statement with no parameters
+    assert_equal('', User.user_properties_joins())
+    city_join = "LEFT JOIN user_properties AS city ON users.id = city.resource_id AND city.name = 'city'"
+    assert_equal(city_join,
+      User.user_properties_joins(:city))
+    assert_equal(city_join,
+      User.user_properties_joins('city'))
+    city_street_join = "LEFT JOIN user_properties AS city ON users.id = city.resource_id AND city.name = 'city' LEFT JOIN user_properties AS street ON users.id = street.resource_id AND street.name = 'street'"
+    assert_equal(city_street_join,
+      User.user_properties_joins(:city, :street))
+    # should allow passing arrays
+    assert_equal(city_street_join,
+      User.user_properties_joins([:city, :street]))
+    # should ignore arguments which are not included in properties_list
+    assert_equal(city_street_join,
+      User.user_properties_joins(:city, :dont_belong_to_properties, :street))
+  end
+
+  # this test is an example for above test's functionality
+  def test_should_allow_finding_by_properties
+    result = User.find(:all, :joins => User.user_properties_joins(:city), :conditions => ['city.value = ?', @tim_city.value])
+    assert_equal 1, result.size
+    assert_equal @tim, result[0]
+  end
 end
