@@ -25,19 +25,26 @@ module Ocher
             @#{properties_table}_hash
           end
 
+          # define a method which returns list of properties - convert properties array to string representation - [:property1, :property2, ...]
+          def self.#{properties_table}_list
+            [#{properties.map{|p| ":#{p}"}.join(',')}]
+          end
+
           # define hook methods
+          after_create :create_uninitialized_#{properties_table}
           after_save :save_changed_#{properties_table}
+
+          def create_uninitialized_#{properties_table}
+            (self.class.#{properties_table}_list - #{properties_table}_hash.keys.map {|e| e.to_sym}).each do |property_name|
+              p = send("\#{property_name}=".to_sym, nil)
+            end
+          end
 
           def save_changed_#{properties_table}
             #{properties_table}_hash.values.select {|p| p.is_changed == true}.each do |p|
               p.resource_id = id if p.new_record?
               p.save
             end
-          end
-
-          # define a method which returns list of properties - convert properties array to string representation - [:property1, :property2, ...]
-          def self.#{properties_table}_list
-            [#{properties.map{|p| ":#{p}"}.join(',')}]
           end
 
           # builds join string for given properties - for each property there has to be done one join

@@ -1,6 +1,8 @@
 require 'rubygems'
 require 'active_record'
+require 'active_record/test_case'
 require 'active_record/fixtures'
+
 require 'test/unit'
 require File.dirname(__FILE__) + '/../init'
 
@@ -38,7 +40,9 @@ class UserWithValidation < AbstractUser
 end
 
 
-class PropertiesFuTest < Test::Unit::TestCase
+class PropertiesFuTest < ActiveSupport::TestCase
+  include ActiveRecord::TestFixtures
+
   self.fixture_path = File.join(File.dirname(__FILE__), 'fixtures')
   # self.fixture_table_names = ActiveRecord::Base.connection.tables
   self.use_transactional_fixtures = true
@@ -102,10 +106,16 @@ class PropertiesFuTest < Test::Unit::TestCase
     user = User.new :name => 'marry', :email => 'marry@email.com'
     user.street = 'Blue Road'
     user.save
-    assert_equal(count + 1, UserProperty.count)
-    property = UserProperty.find(:first, :conditions => "resource_id = #{user.id}")
+    assert_equal(count + 2, UserProperty.count)     # should create rows for initialized and uninitialized properties
+    property = UserProperty.find(:first, :conditions => "resource_id = #{user.id} AND name = 'street'")
     assert_not_nil(property)                            # check if property has been saved with proper resource_id (defined in after_save hook)
     assert_equal('street', property.name)
+    assert_equal('Blue Road', property.value)
+    property = UserProperty.find(:first, :conditions => "resource_id = #{user.id} AND name = 'city'")
+    assert_not_nil(property)                            # check if property has been saved with proper resource_id (defined in after_save hook)
+    assert_equal('city', property.name)
+    assert_equal(nil, property.value)
+
 
     # define a new property
     user.city = 'London'
@@ -116,6 +126,13 @@ class PropertiesFuTest < Test::Unit::TestCase
     user.city = 'Paris'
     user.save
     assert_equal(count + 2, UserProperty.count)     # number of properties remains the same
+  end
+
+  def test_should_create_rows_for_not_initialized_properties_after_create
+    count = UserProperty.count
+    user = User.new
+    user.save
+    assert_equal(count + 2, UserProperty.count)     # should create two properties
   end
 
   def test_should_check_if_validation_and_getting_value_of_not_saved_property_works_properly
